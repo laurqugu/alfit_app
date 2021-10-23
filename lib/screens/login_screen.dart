@@ -1,3 +1,4 @@
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,8 +10,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   String _email = '';
+  String _emailError = '';
+  bool _emailShowError = false;
+
   String _password = '';
+  String _passwordError = '';
+  bool _passwordShowError = false;
+
   bool _rememberme = true;
+  bool _passwordShow = false;
 
 
   @override
@@ -46,9 +54,11 @@ class _LoginScreenState extends State<LoginScreen> {
         autofocus: true,
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
-          suffixIcon: Icon(Icons.email),
           hintText: 'Ingresar correo electrónico',
           labelText: 'Correo electrónico',
+          errorText: _emailShowError ?  _emailError : null,
+          prefixIcon:  Icon(Icons.alternate_email),
+          suffixIcon: Icon(Icons.email),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10) 
           ),
@@ -64,11 +74,20 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       padding: EdgeInsets.all(10),
       child: TextField(
-        obscureText: true,
+        obscureText: !_passwordShow,
         decoration: InputDecoration(
-          suffixIcon: Icon(Icons.lock),
+          prefixIcon: Icon(Icons.lock),
+          suffixIcon: IconButton(
+            icon: _passwordShow ? Icon(Icons.visibility) : Icon(Icons.visibility_off),
+            onPressed: () {
+              setState(() {
+                _passwordShow = !_passwordShow;
+              });
+            },
+          ), 
           hintText: 'Ingresar contraseña',
           labelText: 'Contraseña',
+          errorText: _passwordShowError ? _passwordError : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10) 
           ),
@@ -108,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                  }
                ),
              ),
-             onPressed: () {},
+             onPressed: () => _login(),
            ),
          ),
          SizedBox(width: 20,),
@@ -129,4 +148,40 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
    );
  }
+
+ void _login() {
+   if (!_validateFields()) {
+     return;
+   }
+ }
+
+  bool _validateFields() {
+    bool hasErrors = false;
+
+    if (_email.isEmpty) {
+      hasErrors = true;
+      _emailShowError = true;
+      _emailError = 'Debes ingresar tu correo electrónico';
+    }else if(!EmailValidator.validate(_email)){
+      hasErrors = true;
+      _emailError = 'Debes ingresar un correo válido.'; 
+    }else{
+      _emailShowError = false;
+    }
+
+    if (_password.isEmpty) {
+      hasErrors = true;
+      _passwordShowError = true;
+      _passwordError = 'Debes ingresar tu contraseña.';
+    }else if(_password.length < 6){
+      hasErrors = true;
+      _passwordError = 'Debes ingresar una contraseña de al menos 6 carácteres.'; 
+    }else{
+      _passwordShowError = false;
+    }
+
+    setState(() { });
+
+    return hasErrors;
+  }
 }
