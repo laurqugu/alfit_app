@@ -1,5 +1,12 @@
+import 'dart:convert';
+import 'package:alfit_app/components/loader_component.dart';
+import 'package:alfit_app/models/token.dart';
+import 'package:alfit_app/screens/home_screen.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:alfit_app/helpers/constans.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({ Key? key }) : super(key: key);
@@ -9,23 +16,25 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String _email = '';
+  String _email = 'laura@yopmail.com';
   String _emailError = '';
   bool _emailShowError = false;
 
-  String _password = '';
+  String _password = '123456';
   String _passwordError = '';
   bool _passwordShowError = false;
 
   bool _rememberme = true;
   bool _passwordShow = false;
 
+  bool _showLoader = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-          child: Column(
+      body: Stack(
+        children: <Widget>[
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               _showLogo(),
@@ -35,8 +44,10 @@ class _LoginScreenState extends State<LoginScreen> {
               _showRememberme(),
               _showButtons()
             ],
-          )
-        )      
+          ),
+          _showLoader ? LoaderComponent(text: 'Cargando...') : Container(),
+        ],
+      )      
     );
   }
 
@@ -149,39 +160,85 @@ class _LoginScreenState extends State<LoginScreen> {
    );
  }
 
- void _login() {
+ void _login() async{
+   setState(() {
+     _passwordShow = false;
+   });
+
    if (!_validateFields()) {
      return;
    }
+
+   setState(() {
+     _showLoader = true;
+   });
+
+   Map<String, dynamic> request = {
+     'userName': _email,
+     'password': _password
+   };
+
+   var url = Uri.parse('${Constans.apiUrl}/api/Account/CreateToken');
+   var response = await http.post(
+     url,
+     headers:{
+       'content-type': 'application/json',
+       'accept': 'application/json',
+     },
+     body: jsonEncode(request)
+   );
+
+   setState(() {
+     _showLoader = false;
+   });
+
+   if(response.statusCode >= 400){
+     setState(() {
+       _passwordShowError = true;
+       _passwordError = "Correo y/o contraseña incorrectos.";
+     });
+     return;
+   }
+
+   var body = response.body;
+   var decodedJson = jsonDecode(body);
+   var token = Token.fromJson(decodedJson);
+   Navigator.pushReplacement(
+     context, 
+     MaterialPageRoute(
+       builder: (context) => HomeScreen(token: token,)
+     )
+   );
  }
 
   bool _validateFields() {
-    bool hasErrors = false;
+     bool isValid = true;
 
     if (_email.isEmpty) {
-      hasErrors = true;
+      isValid = false;
       _emailShowError = true;
-      _emailError = 'Debes ingresar tu correo electrónico';
-    }else if(!EmailValidator.validate(_email)){
-      hasErrors = true;
-      _emailError = 'Debes ingresar un correo válido.'; 
-    }else{
+      _emailError = 'Debes ingresar tu correo.';
+    } else if (!EmailValidator.validate(_email)) {
+      isValid = false;
+      _emailShowError = true;
+      _emailError = 'Debes ingresar un correo válido.';
+    } else {
       _emailShowError = false;
     }
 
     if (_password.isEmpty) {
-      hasErrors = true;
+      isValid = false;
       _passwordShowError = true;
       _passwordError = 'Debes ingresar tu contraseña.';
-    }else if(_password.length < 6){
-      hasErrors = true;
-      _passwordError = 'Debes ingresar una contraseña de al menos 6 carácteres.'; 
-    }else{
+    } else if (_password.length < 6) {
+      isValid = false;
+      _passwordShowError = true;
+      _passwordError = 'Debes ingresar una contraseña de al menos 6 carácteres.';
+    } else {
       _passwordShowError = false;
     }
 
     setState(() { });
-
-    return hasErrors;
+    return isValid;
   }
 }
