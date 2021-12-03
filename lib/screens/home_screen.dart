@@ -28,14 +28,28 @@ class _HomeScreenState extends State<HomeScreen> {
  Widget _getBody() {
    return Container(
      margin: EdgeInsets.all(30),
-     child: Center(
-       child: Text(
-         'Que gusto saludarte ${widget.token.user.fullName}',
-         style: TextStyle(
-           fontSize: 20,
-           fontWeight: FontWeight.bold
+     child: Column(
+       mainAxisAlignment: MainAxisAlignment.center,
+       children: [
+         ClipRRect(
+           borderRadius: BorderRadius.circular(100),
+           child: FadeInImage(
+              placeholder: AssetImage('assets/alifit-logo.png'), 
+              image: NetworkImage(widget.token.user.imageFullPath),
+              height: 250,
+              fit: BoxFit.cover
+            ),
          ),
-       ),
+        SizedBox(height: 30),
+        Center(
+          child: Text('Que gusto saludarte ${widget.token.user.fullName}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold
+            ),
+          ), 
+        ),
+       ] 
      ),
    );
  }
